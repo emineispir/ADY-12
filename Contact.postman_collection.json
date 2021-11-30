@@ -7,6 +7,9 @@
 	"item": [
 		{
 			"name": "Get Contact List",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
 			"request": {
 				"method": "GET",
 				"header": [
@@ -21,6 +24,10 @@
 						"type": "text"
 					}
 				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"search\": \"Mr. x\",\r\n    \"order_by\": \"id\",\r\n    \"order_type\": \"desc\"\r\n}"
+				},
 				"url": {
 					"raw": "http://localhost:8000/api/users/",
 					"protocol": "http",
