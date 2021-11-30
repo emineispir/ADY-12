@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\User\DeleteUserRequest;
+use App\Http\Requests\Api\User\IndexUserRequest;
 use App\Http\Requests\Api\User\ShowUserRequest;
 use App\Http\Requests\Api\User\StoreUserRequest;
 use App\Http\Requests\Api\User\UpdateUserRequest;
@@ -18,11 +19,22 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      *
+     * @param IndexUserRequest $request
      * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
-    public function index(Request $request)
+    public function index(IndexUserRequest $request)
     {
-        return UserResource::collection(User::all());
+        $users = User::query();
+        if ($request->has('search')){
+            //
+        }
+        if ($request->has('order_type') and $request->has('order_by')){
+            $users = $users->orderBy($request->order_by, $request->order_type);
+        }
+
+        $users = $users->get();
+
+        return UserResource::collection($users);
     }
 
     /**

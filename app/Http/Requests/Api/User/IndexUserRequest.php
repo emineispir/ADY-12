@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests\Api\User;
 
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 
 class IndexUserRequest extends FormRequest
 {
@@ -13,7 +16,7 @@ class IndexUserRequest extends FormRequest
      */
     public function authorize()
     {
-        return false;
+        return true;
     }
 
     /**
@@ -24,7 +27,9 @@ class IndexUserRequest extends FormRequest
     public function rules()
     {
         return [
-            //
+            'search' => 'nullable|string',
+            'order_type' => ['nullable', Rule::in(['asc', 'desc'])],
+            'order_by' => ['nullable', Rule::in(Schema::getColumnListing('users'))]
         ];
     }
 }
