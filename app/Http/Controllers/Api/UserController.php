@@ -25,7 +25,7 @@ class UserController extends Controller
      */
     public function index(IndexUserRequest $request)
     {
-        $users = Cache::remember(json_encode($request->safe()->all()), 120, function(){
+        $users = Cache::remember(json_encode($request->safe()->all()), 120, function() use($request){
             $users = User::search($request->search ?? null);
 
             if ($request->has('order_type') and $request->has('order_by')) {
