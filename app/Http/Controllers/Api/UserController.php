@@ -3,18 +3,26 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\User\DeleteUserRequest;
+use App\Http\Requests\Api\User\ShowUserRequest;
+use App\Http\Requests\Api\User\StoreUserRequest;
+use App\Http\Requests\Api\User\UpdateUserRequest;
+use App\Http\Resources\UserResource;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
      */
     public function index(Request $request)
     {
-        
+        return UserResource::collection(User::all());
     }
 
     /**
@@ -23,42 +31,75 @@ class UserController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        //
+        try {
+            User::create($request->validated());
+        }catch (Throwable $exception){
+            Log::info('User creation failed. '. $exception->getMessage());
+            abort(404, 'User creation failed. '. $exception->getMessage());
+            throw $exception;
+        }
+
+        return response()->noContent(201);
+
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @param ShowUserRequest $request
+     * @param User $user
+     * @return UserResource
      */
-    public function show($id)
+    public function show(ShowUserRequest $request, User $user)
     {
-        //
+        return UserResource::make($user);
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @param UpdateUserRequest $request
+     * @param User $user
+     * @return UserResource
      */
-    public function update(Request $request, $id)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        //
+        try {
+            $user->update($request->safe()->all());
+        }catch (Throwable $exception){
+            Log::info('User update failed. '. $exception->getMessage());
+            abort(404, 'User update failed. '. $exception->getMessage());
+            throw $exception;
+        }
+
+        return UserResource::make($user->fresh());
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param DeleteUserRequest $request
+     * @param User $user
      * @return \Illuminate\Http\Response
+     * @throws \Throwable
      */
-    public function destroy($id)
+    public function destroy(DeleteUserRequest $request, User $user)
     {
-        //
+        DB::beginTransaction();
+        try {
+            $user->delete();
+        }catch (\Throwable $exception){
+            DB::rollBack();
+            Log::info('User deletion failed. '. $exception->getMessage());
+            abort(404, 'User deletion failed. '. $exception->getMessage());
+            throw $exception;
+        }
+
+        DB::commit();
+
+        return response()->noContent();
+
     }
 }
