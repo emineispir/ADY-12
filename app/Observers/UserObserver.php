@@ -12,7 +12,7 @@ class UserObserver
         try {
             $user->addToIndex();
         } catch (\Exception $e) {
-            Log::warning('User failed to index. '. json_encode($user));
+            Log::warning('User failed to index. ' . json_encode($user));
             return false;
         }
     }

@@ -11,6 +11,7 @@ use App\Http\Requests\Api\User\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -24,15 +25,14 @@ class UserController extends Controller
      */
     public function index(IndexUserRequest $request)
     {
-        $users = User::query();
-        if ($request->has('search')){
-            //
-        }
-        if ($request->has('order_type') and $request->has('order_by')){
-            $users = $users->orderBy($request->order_by, $request->order_type);
-        }
+        $users = Cache::remember(json_encode($request->safe()->all()), 120, function(){
+            $users = User::search($request->search ?? null);
 
-        $users = $users->get();
+            if ($request->has('order_type') and $request->has('order_by')) {
+                $users = $users->sortBy($request->order_by, SORT_REGULAR, $request->order_type === 'desc');
+            }
+            return $users;
+        });
 
         return UserResource::collection($users);
     }
@@ -40,16 +40,16 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
     public function store(StoreUserRequest $request)
     {
         try {
             User::create($request->validated());
-        }catch (Throwable $exception){
-            Log::info('User creation failed. '. $exception->getMessage());
-            abort(404, 'User creation failed. '. $exception->getMessage());
+        } catch (Throwable $exception) {
+            Log::info('User creation failed. ' . $exception->getMessage());
+            abort(404, 'User creation failed. ' . $exception->getMessage());
             throw $exception;
         }
 
@@ -80,9 +80,9 @@ class UserController extends Controller
     {
         try {
             $user->update($request->safe()->all());
-        }catch (Throwable $exception){
-            Log::info('User update failed. '. $exception->getMessage());
-            abort(404, 'User update failed. '. $exception->getMessage());
+        } catch (Throwable $exception) {
+            Log::info('User update failed. ' . $exception->getMessage());
+            abort(404, 'User update failed. ' . $exception->getMessage());
             throw $exception;
         }
 
@@ -102,10 +102,10 @@ class UserController extends Controller
         DB::beginTransaction();
         try {
             $user->delete();
-        }catch (\Throwable $exception){
+        } catch (\Throwable $exception) {
             DB::rollBack();
-            Log::info('User deletion failed. '. $exception->getMessage());
-            abort(404, 'User deletion failed. '. $exception->getMessage());
+            Log::info('User deletion failed. ' . $exception->getMessage());
+            abort(404, 'User deletion failed. ' . $exception->getMessage());
             throw $exception;
         }
 
